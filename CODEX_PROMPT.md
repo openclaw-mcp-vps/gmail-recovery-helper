@@ -4,29 +4,29 @@ Build a complete, production-ready Next.js 15 App Router application.
 
 PROJECT: gmail-recovery-helper
 HEADLINE: Recover locked Gmail accounts with device verification
-WHAT: None
-WHY: None
-WHO PAYS: None
+WHAT: A step-by-step recovery tool that guides users through Gmail's device verification process when their accounts get locked. Automates the tedious back-and-forth with Google support and provides clear instructions for each recovery method.
+WHY: Getting locked out of Gmail means losing access to everything - other accounts, work emails, years of data. Google's recovery process is confusing and most people give up or create new accounts, losing everything.
+WHO PAYS: Non-technical users who've been locked out of their primary Gmail account, especially older users or those who rarely update recovery info. Also small business owners who can't afford to lose their business email.
 NICHE: security-tools
 PRICE: $$19/mo
 
 ARCHITECTURE SPEC:
-A Next.js web app that guides users through Gmail account recovery using device verification methods. The tool provides step-by-step instructions, automated form filling assistance, and tracks recovery progress through a dashboard.
+A Next.js web app that provides an interactive step-by-step wizard guiding users through Gmail account recovery. The app uses a decision tree to determine the best recovery path based on user's available information and automates form filling where possible.
 
 PLANNED FILES:
 - app/page.tsx
-- app/dashboard/page.tsx
 - app/recovery/page.tsx
-- app/api/auth/route.ts
+- app/recovery/[step]/page.tsx
+- app/api/recovery-steps/route.ts
 - app/api/webhooks/lemonsqueezy/route.ts
 - components/RecoveryWizard.tsx
-- components/DeviceVerificationGuide.tsx
-- components/ProgressTracker.tsx
-- lib/gmail-recovery-steps.ts
+- components/StepProgress.tsx
+- components/RecoveryMethodCard.tsx
+- lib/recovery-logic.ts
 - lib/lemonsqueezy.ts
-- lib/auth.ts
+- types/recovery.ts
 
-DEPENDENCIES: next, tailwindcss, @lemonsqueezy/lemonsqueezy.js, next-auth, prisma, @prisma/client, zod, lucide-react, framer-motion
+DEPENDENCIES: next, react, tailwindcss, @headlessui/react, @heroicons/react, framer-motion, @lemonsqueezy/lemonsqueezy.js, zod, react-hook-form, @hookform/resolvers
 
 REQUIREMENTS:
 - Next.js 15 with App Router (app/ directory)
@@ -34,17 +34,33 @@ REQUIREMENTS:
 - Tailwind CSS v4
 - shadcn/ui components (npx shadcn@latest init, then add needed components)
 - Dark theme ONLY — background #0d1117, no light mode
-- Lemon Squeezy checkout overlay for payments
+- Stripe Payment Link for payments (hosted checkout — use the URL directly as the Buy button href)
 - Landing page that converts: hero, problem, solution, pricing, FAQ
 - The actual tool/feature behind a paywall (cookie-based access after purchase)
 - Mobile responsive
 - SEO meta tags, Open Graph tags
 - /api/health endpoint that returns {"status":"ok"}
+- NO HEAVY ORMs: Do NOT use Prisma, Drizzle, TypeORM, Sequelize, or Mongoose. If the tool needs persistence, use direct SQL via `pg` (Postgres) or `better-sqlite3` (local), or just filesystem JSON. Reason: these ORMs require schema files and codegen steps that fail on Vercel when misconfigured.
+- INTERNAL FILE DISCIPLINE: Every internal import (paths starting with `@/`, `./`, or `../`) MUST refer to a file you actually create in this build. If you write `import { Card } from "@/components/ui/card"`, then `components/ui/card.tsx` MUST exist with a real `export const Card` (or `export default Card`). Before finishing, scan all internal imports and verify every target file exists. Do NOT use shadcn/ui patterns unless you create every component from scratch — easier path: write all UI inline in the page that uses it.
+- DEPENDENCY DISCIPLINE: Every package imported in any .ts, .tsx, .js, or .jsx file MUST be
+  listed in package.json dependencies (or devDependencies for build-only). Before finishing,
+  scan all source files for `import` statements and verify every external package (anything
+  not starting with `.` or `@/`) appears in package.json. Common shadcn/ui peers that MUST
+  be added if used:
+  - lucide-react, clsx, tailwind-merge, class-variance-authority
+  - react-hook-form, zod, @hookform/resolvers
+  - @radix-ui/* (for any shadcn component)
+- After running `npm run build`, if you see "Module not found: Can't resolve 'X'", add 'X'
+  to package.json dependencies and re-run npm install + npm run build until it passes.
 
 ENVIRONMENT VARIABLES (create .env.example):
-- NEXT_PUBLIC_LEMON_SQUEEZY_STORE_ID
-- NEXT_PUBLIC_LEMON_SQUEEZY_PRODUCT_ID
-- LEMON_SQUEEZY_WEBHOOK_SECRET
+- NEXT_PUBLIC_STRIPE_PAYMENT_LINK  (full URL, e.g. https://buy.stripe.com/test_XXX)
+- NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY  (pk_test_... or pk_live_...)
+- STRIPE_WEBHOOK_SECRET  (set when webhook is wired)
+
+BUY BUTTON RULE: the Buy button's href MUST be `process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK`
+used as-is — do NOT construct URLs from a product ID, do NOT prepend any base URL,
+do NOT wrap it in an embed iframe. The link opens Stripe's hosted checkout directly.
 
 After creating all files:
 1. Run: npm install
@@ -54,26 +70,3 @@ After creating all files:
 
 Do NOT use placeholder text. Write real, helpful content for the landing page
 and the tool itself. The tool should actually work and provide value.
-
-
-PREVIOUS ATTEMPT FAILED WITH:
-Codex exited 1: Reading additional input from stdin...
-OpenAI Codex v0.121.0 (research preview)
---------
-workdir: /tmp/openclaw-builds/gmail-recovery-helper
-model: gpt-5.3-codex
-provider: openai
-approval: never
-sandbox: danger-full-access
-reasoning effort: none
-reasoning summaries: none
-session id: 019d94de-438b-7a93-adc3-70097f325e13
---------
-user
-# Build Task: gmail-recovery-helper
-
-Build a complete, production-ready Next.js 15 App Router application.
-
-PROJECT: gmail-recovery-helper
-HEADLINE: Recover locked G
-Please fix the above errors and regenerate.
